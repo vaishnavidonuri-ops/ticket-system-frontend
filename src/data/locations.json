@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "building": "Building A",
+    "floor": "1st Floor",
+    "desk": "Desk 101"
+  },
+  {
+    "id": 2,
+    "building": "Building A",
+    "floor": "2nd Floor",
+    "desk": "Desk 204"
+  },
+  {
+    "id": 3,
+    "building": "Building B",
+    "floor": "Ground Floor",
+    "desk": "Reception"
+  }
+]

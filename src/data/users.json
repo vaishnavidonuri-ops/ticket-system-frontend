@@ -1,0 +1,30 @@
+[
+  {
+    "id": 1,
+    "name": "John D.",
+    "department": "IT Support",
+    "designation": "System Engineer",
+    "email": "john.d@example.com"
+  },
+  {
+    "id": 2,
+    "name": "Sarah J.",
+    "department": "IT Support",
+    "designation": "Senior Developer",
+    "email": "sarah.j@example.com"
+  },
+  {
+    "id": 3,
+    "name": "Michael R.",
+    "department": "Human Resources",
+    "designation": "HR Manager",
+    "email": "michael.r@example.com"
+  },
+  {
+    "id": 4,
+    "name": "Anita K.",
+    "department": "Facilities",
+    "designation": "Admin Officer",
+    "email": "anita.k@example.com"
+  }
+]
