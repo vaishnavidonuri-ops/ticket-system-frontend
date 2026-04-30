@@ -1,28 +1,33 @@
+import { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
-import StatsCards from "../components/StatsCards";
 import TicketTable from "../components/TicketTable";
-import { useNavigate } from "react-router-dom";
 
 const DashboardPage = () => {
-  const navigate = useNavigate();
+  const [tickets, setTickets] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:3001/api/v1/tickets/all")
+      .then((res) => res.json())
+      .then((data) => {
+        setTickets(data.data.rows); // ✅ correct mapping
+      })
+      .catch((err) => console.error(err));
+  }, []);
 
   return (
     <div className="layout">
-
+      {/* ✅ Sidebar */}
       <Sidebar />
 
+      {/* ✅ Main Area */}
       <div className="main">
         <Header />
 
-        <button className="create-btn" onClick={() => navigate("/create-ticket")}>
-          Create New Ticket
-        </button>
+        <h2>Dashboard</h2>
 
-        <StatsCards />
-        <TicketTable />
+        <TicketTable tickets={tickets} />
       </div>
-
     </div>
   );
 };

@@ -1,4 +1,12 @@
-const TicketTable = () => {
+type Ticket = {
+  id: number;
+  title: string;
+  department: string;
+  status: string;
+  assignedTo?: string;
+};
+
+const TicketTable = ({ tickets }: { tickets: Ticket[] }) => {
   return (
     <table className="table">
       <thead>
@@ -6,21 +14,19 @@ const TicketTable = () => {
           <th>Ticket ID</th>
           <th>Department</th>
           <th>Issue</th>
-          <th>Priority</th>
           <th>Status</th>
           <th>Assigned</th>
         </tr>
       </thead>
 
       <tbody>
-        {[1,2,3,4].map((_, i) => (
-          <tr key={i}>
-            <td>#T-100{i}</td>
-            <td>IT Support</td>
-            <td>Browser Crash</td>
-            <td>High</td>
-            <td>Open</td>
-            <td>Sarah</td>
+        {tickets.map((t) => (
+          <tr key={t.id}>
+            <td>#T-{t.id}</td>
+            <td>{t.department}</td>
+            <td>{t.title}</td>
+            <td>{t.status}</td>
+            <td>{t.assignedTo || "Unassigned"}</td>
           </tr>
         ))}
       </tbody>
