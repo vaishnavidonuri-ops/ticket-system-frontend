@@ -1,0 +1,5 @@
+[
+  { "id": "ORG001", "name": "Visaka Industries", "type": "Parent" },
+  { "id": "ORG002", "name": "Visaka Cement Division", "type": "Division" },
+  { "id": "ORG003", "name": "Visaka Fibre Division", "type": "Division" }
+]

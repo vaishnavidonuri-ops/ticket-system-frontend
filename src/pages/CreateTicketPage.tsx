@@ -1,210 +1,221 @@
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { ArrowLeft, Upload, X, FileText } from "lucide-react"
+import { AppShell } from "@/components/layout/AppShell"
+import { Card, CardBody } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { toast } from "@/components/ui/toast"
+import { API, CURRENT_USER } from "@/lib/utils"
+import departments from "@/data/departments.json"
+import users from "@/data/users.json"
 
-// ✅ Import JSON files
-import departments from "../data/departments.json";
-import issueTypes from "../data/issueTypes.json";
-import locations from "../data/locations.json";
-import priorities from "../data/priorities.json";
+const ISSUE_TYPES = ["Hardware", "Software", "Network", "HR", "Facilities", "Finance", "General", "Security", "Account/Access"]
+const PRIORITIES  = ["Low", "Medium", "High", "Critical"]
+const STATUSES    = ["New", "In Progress"]
+const LOCATIONS   = ["Base Site", "HO Secunderabad", "Garhmukeshwar Depot", "Vizag Plant", "Hyderabad Office"]
 
-const CreateTicketPage = () => {
-  const navigate = useNavigate();
+const Field = ({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) => (
+  <div className="flex flex-col gap-1">
+    <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+      {label}{required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+    {children}
+  </div>
+)
 
-  // ✅ Form State
+const inputCls = "w-full text-sm border border-slate-200 rounded-lg px-3 py-2 bg-white text-slate-700 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 transition-all"
+
+export default function CreateTicketPage() {
+  const navigate = useNavigate()
+  const [submitting, setSubmitting] = useState(false)
+  const [files, setFiles]   = useState<File[]>([])
+  const [dragging, setDragging] = useState(false)
+
   const [form, setForm] = useState({
-    department: "",
-    // type: "",
-    issue: "",
-    location: "",
-    priority: "",
-    description: "",
-    attachment: [] as File[]
-  });
+    title:             "",
+    description:       "",
+    department:        "",
+    issueType:         "",
+    priority:          "Medium",
+    status:            "New",
+    location:          "Base Site",
+    assignedTo:        "",
+    responsiblePerson: "",
+    createdBy:         CURRENT_USER.id,
+  })
 
-  // ✅ Handle Input Change
-  const handleChange = (e: any) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+    setForm(f => ({ ...f, [k]: e.target.value }))
 
-  // ✅ Handle File Upload
-  const handleFileChange = (e: any) => {
-    const files = Array.from(e.target.files) as File[];
-    setForm((prev) => ({
-      ...prev,
-      attachment: [...prev.attachment, ...files]
-    }));
-  };
+  const addFiles = (incoming: File[]) =>
+    setFiles(prev => [...prev, ...incoming.filter(f => !prev.find(p => p.name === f.name))])
 
-  const removeFile = (index: number) => {
-    const updated = form.attachment.filter((_, i) => i !== index);
-    setForm({ ...form, attachment: updated });
-  };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!form.title.trim()) { toast.error("Title is required"); return }
 
-  const handleSubmit = async () => {
-  try {
-    const payload = {
-      title: form.issue, // or custom title
-      description: form.description,
-      location: form.location,
-      issue_type: form.issue,
-      department: form.department,
-      assigned_to: "EMP002", // static for now
-      created_by: "EMP001",  // current user
-      status: "New"
-    };
+    setSubmitting(true)
+    try {
+      const fd = new FormData()
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v))
+      files.forEach(f => fd.append("attachments", f))
 
-    const response = await fetch(
-      "http://localhost:3001/api/v1/tickets",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+      const res  = await fetch(`${API}/tickets`, { method: "POST", body: fd })
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success("Request created successfully!")
+        setTimeout(() => navigate(`/tickets/${data.data?.id ?? ""}`), 700)
+      } else {
+        toast.error(data.message ?? "Failed to create request")
       }
-    );
-
-    const data = await response.json();
-    console.log(data);
-
-    if (response.ok) {
-      alert("Ticket created!");
-      navigate("/");
-    } else {
-      alert("Error creating ticket");
+    } catch {
+      toast.error("Network error. Please try again.")
+    } finally {
+      setSubmitting(false)
     }
-
-  } catch (err) {
-    console.error(err);
   }
-};
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "Arial" }}>
-
-      {/* Sidebar */}
-      <div style={{
-        width: "220px",
-        background: "#f4f6f8",
-        padding: "20px"
-      }}>
-        <h3>Menu</h3>
-        <p style={{ cursor: "pointer" }} onClick={() => navigate("/")}>
-          Dashboard
-        </p>
-        <p>Create Ticket</p>
-      </div>
-
-      {/* Main Content */}
-      <div style={{ flex: 1, padding: "20px" }}>
-
-        <h2>Create Ticket</h2>
-
-        <div className="ticket-container">
-
-  {/* LEFT SIDE */}
-  <div className="form-left">
-
-    {/* Department */}
-    <label>Department</label>
-    <select name="department" style={inputStyle} onChange={handleChange}>
-      <option value="">Select Department</option>
-      {departments.map((d, i) => (
-        <option key={i} value={d}>{d}</option>
-      ))}
-    </select>
-
-    {/* Issue */}
-    <label>Issue / Type</label>
-    <select name="issue" style={inputStyle} onChange={handleChange}>
-      <option value="">Select Issue</option>
-      {issueTypes.map((item: string, i: number) => (
-        <option key={i} value={item}>{item}</option>
-      ))}
-    </select>
-
-    {/* Location */}
-    <label>Location</label>
-    <select name="location" style={inputStyle} onChange={handleChange}>
-      <option value="">Select Location</option>
-      {locations.map((loc) => (
-        <option key={loc.id} value={loc.id}>
-          {loc.building} - {loc.floor} - {loc.desk}
-        </option>
-      ))}
-    </select>
-
-    {/* Priority */}
-    <label>Priority</label>
-    <select name="priority" style={inputStyle} onChange={handleChange}>
-      <option value="">Select Priority</option>
-      {priorities.map((p, i) => (
-        <option key={i} value={p}>{p}</option>
-      ))}
-    </select>
-
-    {/* Description */}
-    <label>Description</label>
-    <textarea
-      name="description"
-      className="textarea"
-      placeholder="Enter details..."
-      onChange={handleChange}
-    />
-
-    {/* Save Button */}
-    <button className="save-btn" onClick={handleSubmit}>
-      Save Ticket
-    </button>
-
-  </div>
-
-  {/* RIGHT SIDE */}
-  <div className="form-right">
-
-    <label>Attachments</label>
-
-    <div className="upload-box">
-
-      <input
-        type="file"
-        multiple
-        id="fileUpload"
-        className="hidden-input"
-        onChange={handleFileChange}
-      />
-
-      <div
-        className="upload-area"
-        onClick={() => document.getElementById("fileUpload")?.click()}
-      >
-        Drop files here or <span>choose file</span>
-      </div>
-
-      <div className="file-list">
-        {form.attachment.map((file, index) => (
-          <div key={index} className="file-item">
-            <span>{file.name}</span>
-            <span className="delete" onClick={() => removeFile(index)}>x</span>
+    <AppShell breadcrumbs={[{ label: "Dashboard", path: "/" }, { label: "All Requests", path: "/tickets" }, { label: "New Incident" }]}>
+      <form onSubmit={handleSubmit} className="max-w-4xl mx-auto space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <button type="button" onClick={() => navigate(-1)} className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800">New Incident</h1>
+            <p className="text-xs text-slate-500">Submit a new IT support request</p>
           </div>
-        ))}
-      </div>
+        </div>
 
-    </div>
+        {/* Quick settings row */}
+        <Card>
+          <CardBody className="py-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <Field label="Priority" required>
+                <select className={inputCls} value={form.priority} onChange={set("priority")}>
+                  {PRIORITIES.map(p => <option key={p}>{p}</option>)}
+                </select>
+              </Field>
+              <Field label="Status">
+                <select className={inputCls} value={form.status} onChange={set("status")}>
+                  {STATUSES.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </Field>
+              <Field label="Issue Type">
+                <select className={inputCls} value={form.issueType} onChange={set("issueType")}>
+                  <option value="">— Select —</option>
+                  {ISSUE_TYPES.map(t => <option key={t}>{t}</option>)}
+                </select>
+              </Field>
+              <Field label="Location">
+                <select className={inputCls} value={form.location} onChange={set("location")}>
+                  {LOCATIONS.map(l => <option key={l}>{l}</option>)}
+                </select>
+              </Field>
+            </div>
+          </CardBody>
+        </Card>
 
-  </div>
+        {/* Main form */}
+        <Card>
+          <CardBody className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Field label="Department / Group" required>
+                <select className={inputCls} value={form.department} onChange={set("department")} required>
+                  <option value="">— Select Department —</option>
+                  {(departments as string[]).map(d => <option key={d}>{d}</option>)}
+                </select>
+              </Field>
+              <Field label="Assigned Technician">
+                <select className={inputCls} value={form.assignedTo} onChange={set("assignedTo")}>
+                  <option value="">— Not Assigned —</option>
+                  {(users as Array<{ id: string; name: string; designation?: string }>).map(u => (
+                    <option key={u.id} value={u.id}>{u.name}{u.designation ? ` (${u.designation})` : ""}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
 
-</div>
-      </div>
-    </div>
-  );
-};
+            <Field label="Subject / Title" required>
+              <input
+                className={inputCls}
+                placeholder="Brief summary of the issue…"
+                value={form.title}
+                onChange={set("title")}
+                required
+              />
+            </Field>
 
-const inputStyle = {
-  display: "block",
-  width: "100%",
-  marginBottom: "10px",
-  padding: "8px"
-};
+            <Field label="Description">
+              <textarea
+                className={`${inputCls} resize-none`}
+                rows={5}
+                placeholder="Describe the issue in detail…"
+                value={form.description}
+                onChange={set("description")}
+              />
+            </Field>
 
-export default CreateTicketPage;
+            <Field label="Responsible Person">
+              <select className={inputCls} value={form.responsiblePerson} onChange={set("responsiblePerson")}>
+                <option value="">— Select —</option>
+                {(users as Array<{ id: string; name: string }>).map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </Field>
+          </CardBody>
+        </Card>
+
+        {/* Attachments */}
+        <Card>
+          <CardBody>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">Attachments</p>
+            <div
+              onDragOver={e => { e.preventDefault(); setDragging(true) }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={e => { e.preventDefault(); setDragging(false); addFiles(Array.from(e.dataTransfer.files)) }}
+              onClick={() => document.getElementById("att-input")?.click()}
+              className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
+                dragging ? "border-blue-400 bg-blue-50" : "border-slate-200 hover:border-blue-300 hover:bg-slate-50"
+              }`}
+            >
+              <Upload className="h-6 w-6 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-slate-500">Drag &amp; drop files here, or <span className="text-blue-600 font-medium">browse</span></p>
+              <p className="text-xs text-slate-400 mt-1">Images, PDFs, documents up to 10MB</p>
+              <input id="att-input" type="file" multiple className="hidden" onChange={e => addFiles(Array.from(e.target.files ?? []))} />
+            </div>
+
+            {files.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {files.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 text-xs text-slate-700">
+                    <FileText className="h-3.5 w-3.5 text-slate-400" />
+                    <span className="max-w-[160px] truncate">{f.name}</span>
+                    <button type="button" onClick={() => setFiles(fs => fs.filter((_, j) => j !== i))} className="text-slate-400 hover:text-red-500 transition-colors">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pb-6">
+          <Button type="button" variant="ghost" onClick={() => navigate(-1)}>Cancel</Button>
+          <Button type="button" variant="secondary" onClick={() => setForm(f => ({ ...f, title: "", description: "", department: "", issueType: "", assignedTo: "", responsiblePerson: "" }))}>
+            Reset
+          </Button>
+          <Button type="submit" variant="primary" disabled={submitting}>
+            {submitting ? "Submitting…" : "Add Request"}
+          </Button>
+        </div>
+      </form>
+    </AppShell>
+  )
+}
