@@ -8,9 +8,9 @@ const DashboardPage = () => {
 
   useEffect(() => {
     fetch("http://localhost:3001/api/v1/tickets/all")
-      .then((res) => res.json())
+      .then((res) => res?.json())
       .then((data) => {
-        setTickets(data.data.rows); // ✅ correct mapping
+        setTickets(data?.data?.rows); // ✅ correct mapping
       })
       .catch((err) => console.error(err));
   }, []);

@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-
-// ✅ Import JSON files
 import departments from "../data/departments.json";
 import issueTypes from "../data/issueTypes.json";
 import locations from "../data/locations.json";
 import priorities from "../data/priorities.json";
+import users from "../data/users.json";
+import { CURRENT_USER_ID } from "../components/Header";
 
 const CreateTicketPage = () => {
   const navigate = useNavigate();
@@ -13,17 +13,22 @@ const CreateTicketPage = () => {
   // ✅ Form State
   const [form, setForm] = useState({
     department: "",
-    // type: "",
     issue: "",
     location: "",
     priority: "",
     description: "",
+    assigned_to: "",
+    status: "New",
     attachment: [] as File[]
   });
 
   // ✅ Handle Input Change
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+    // Reset assigned_to if department changes
+    if (e.target.name === "department") {
+      setForm(f => ({ ...f, assigned_to: "" }));
+    }
   };
 
   // ✅ Handle File Upload
@@ -41,43 +46,38 @@ const CreateTicketPage = () => {
   };
 
   const handleSubmit = async () => {
-  try {
-    const payload = {
-      title: form.issue, // or custom title
-      description: form.description,
-      location: form.location,
-      issue_type: form.issue,
-      department: form.department,
-      assigned_to: "EMP002", // static for now
-      created_by: "EMP001",  // current user
-      status: "New"
-    };
-
-    const response = await fetch(
-      "http://localhost:3001/api/v1/tickets",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+    try {
+      const payload = {
+        title: form.issue,
+        description: form.description,
+        location: form.location,
+        issue_type: form.issue,
+        department: form.department,
+        assigned_to: form.assigned_to,
+        created_by: CURRENT_USER_ID,
+        status: form.status
+      };
+      const response = await fetch(
+        "http://localhost:3001/api/v1/tickets",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+      const data = await response.json();
+      if (response.ok) {
+        alert("Ticket created!");
+        navigate("/");
+      } else {
+        alert("Error creating ticket");
       }
-    );
-
-    const data = await response.json();
-    console.log(data);
-
-    if (response.ok) {
-      alert("Ticket created!");
-      navigate("/");
-    } else {
-      alert("Error creating ticket");
+    } catch (err) {
+      console.error(err);
     }
-
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
   return (
     <div style={{ display: "flex", height: "100vh", fontFamily: "Arial" }}>
@@ -141,6 +141,34 @@ const CreateTicketPage = () => {
       {priorities.map((p, i) => (
         <option key={i} value={p}>{p}</option>
       ))}
+    </select>
+
+    {/* Assigned To */}
+    <label>Assign To</label>
+    <select
+      name="assigned_to"
+      style={inputStyle}
+      value={form.assigned_to}
+      onChange={handleChange}
+      disabled={!form.department}
+    >
+      <option value="">Select User</option>
+      {users.filter(u => u.department === form.department).map(u => (
+        <option key={u.id} value={u.id}>{u.name}</option>
+      ))}
+    </select>
+
+    {/* Status */}
+    <label>Status</label>
+    <select
+      name="status"
+      style={{ ...inputStyle, background: form.status === "New" ? "#e3f2fd" : form.status === "Inprogress" ? "#fff3cd" : "#e8f5e9", color: form.status === "New" ? "#1976d2" : form.status === "Inprogress" ? "#856404" : "#2e7d32" }}
+      value={form.status}
+      onChange={handleChange}
+    >
+      <option value="New">New</option>
+      <option value="Inprogress">In Progress</option>
+      <option value="Closed">Closed</option>
     </select>
 
     {/* Description */}

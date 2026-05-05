@@ -1,7 +1,7 @@
 import { useState } from "react";
 import users from "../data/users.json";
 
-const CURRENT_USER_ID = 4;
+ export const CURRENT_USER_ID = "EMP004";
 
 const Header = () => {
   const [showProfile, setShowProfile] = useState(false);
@@ -37,6 +37,7 @@ const Header = () => {
 
       </div>
     </div>
+    
   );
 };
 
